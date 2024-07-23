@@ -23,14 +23,14 @@ use Symfony\Component\Messenger\Stamp\StampInterface;
  */
 final class TransportConfiguration implements StampInterface
 {
-    private $topic;
+    private mixed $topic;
 
     private array $metadata;
 
-    public function __construct(array $configuration = array())
+    public function __construct(array $configuration = [])
     {
         $this->topic = $configuration['topic'] ?? null;
-        $this->metadata = $configuration['metadata'] ?? array();
+        $this->metadata = $configuration['metadata'] ?? [];
     }
 
     /**

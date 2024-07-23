@@ -12,7 +12,10 @@
 namespace Enqueue\MessengerAdapter;
 
 use Interop\Queue\Context;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use RuntimeException;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
@@ -22,17 +25,13 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
  *
  * @author Samuel Roze <samuel.roze@gmail.com>
  */
-class QueueInteropTransportFactory implements TransportFactoryInterface
+readonly class QueueInteropTransportFactory implements TransportFactoryInterface
 {
-    private $serializer;
-    private $debug;
-    private $container;
-
-    public function __construct(SerializerInterface $serializer, ContainerInterface $container, bool $debug = false)
-    {
-        $this->serializer = $serializer;
-        $this->container = $container;
-        $this->debug = $debug;
+    public function __construct(
+        private SerializerInterface $serializer,
+        private ContainerInterface $container,
+        private bool $debug = false,
+    ) {
     }
 
     // BC layer for Symfony 4.1 beta1
@@ -47,8 +46,11 @@ class QueueInteropTransportFactory implements TransportFactoryInterface
         return $this->createTransport($dsn, $options);
     }
 
-    public function createTransport(string $dsn, array $options, SerializerInterface $serializer = null): TransportInterface
-    {
+    public function createTransport(
+        string $dsn,
+        array $options,
+        SerializerInterface $serializer = null,
+    ): TransportInterface {
         [$contextManager, $dsnOptions] = $this->parseDsn($dsn);
 
         $options = array_merge($dsnOptions, $options);
@@ -57,41 +59,51 @@ class QueueInteropTransportFactory implements TransportFactoryInterface
             $serializer ?? $this->serializer,
             $contextManager,
             $options,
-            $this->debug
+            $this->debug,
         );
     }
 
     public function supports(string $dsn, array $options): bool
     {
-        return 0 === strpos($dsn, 'enqueue://');
+        return str_starts_with($dsn, 'enqueue://');
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     private function parseDsn(string $dsn): array
     {
         $parsedDsn = parse_url($dsn);
         $enqueueContextName = $parsedDsn['host'];
 
-        $amqpOptions = array();
+        $amqpOptions = [];
         if (isset($parsedDsn['query'])) {
             parse_str($parsedDsn['query'], $parsedQuery);
             $parsedQuery = array_map(function ($e) {
-                return is_numeric($e) ? (int) $e : $e;
+                return is_numeric($e) ? (int)$e : $e;
             }, $parsedQuery);
             $amqpOptions = array_replace_recursive($amqpOptions, $parsedQuery);
         }
 
-        if (!$this->container->has($contextService = 'enqueue.transport.'.$enqueueContextName.'.context')) {
-            throw new \RuntimeException(sprintf('Can\'t find Enqueue\'s transport named "%s": Service "%s" is not found.', $enqueueContextName, $contextService));
+        if (!$this->container->has($contextService = 'enqueue.transport.' . $enqueueContextName . '.context')) {
+            throw new RuntimeException(
+                sprintf(
+                    'Can\'t find Enqueue\'s transport named "%s": Service "%s" is not found.',
+                    $enqueueContextName,
+                    $contextService,
+                ),
+            );
         }
 
         $context = $this->container->get($contextService);
         if (!$context instanceof Context) {
-            throw new \RuntimeException(sprintf('Service "%s" not instanceof context', $contextService));
+            throw new RuntimeException(sprintf('Service "%s" not instanceof context', $contextService));
         }
 
-        return array(
+        return [
             new AmqpContextManager($context),
             $amqpOptions,
-        );
+        ];
     }
 }

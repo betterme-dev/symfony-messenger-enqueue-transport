@@ -19,6 +19,7 @@ use Interop\Queue\Processor;
 use Symfony\Component\Messenger\Exception\MessageDecodingFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
+use Throwable;
 
 /**
  * The processor could be used with any queue interop compatible consumer, for example Enqueue's QueueConsumer.
@@ -26,26 +27,27 @@ use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
  * @author Max Kotliar <kotlyar.maksim@gmail.com>
  * @author Samuel Roze <samuel.roze@gmail.com>
  */
-class MessageBusProcessor implements Processor
+readonly class MessageBusProcessor implements Processor
 {
-    private $bus;
-    private $messageDecoder;
 
-    public function __construct(MessageBusInterface $bus, SerializerInterface $messageDecoder)
-    {
-        $this->bus = $bus;
-        $this->messageDecoder = $messageDecoder;
+    public function __construct(
+        private MessageBusInterface $bus,
+        private SerializerInterface $messageDecoder,
+    ) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function process(Message $message, Context $context)
     {
         try {
-            $busMessage = $this->messageDecoder->decode(array(
+            $busMessage = $this->messageDecoder->decode([
                 'body' => $message->getBody(),
                 'headers' => $message->getHeaders(),
                 'properties' => $message->getProperties(),
-            ));
-        } catch (MessageDecodingFailedException $e) {
+            ]);
+        } catch (MessageDecodingFailedException) {
             return Processor::REJECT;
         }
 
@@ -53,11 +55,11 @@ class MessageBusProcessor implements Processor
             $this->bus->dispatch($busMessage);
 
             return Processor::ACK;
-        } catch (RejectMessageException $e) {
+        } catch (RejectMessageException) {
             return Processor::REJECT;
-        } catch (RequeueMessageException $e) {
+        } catch (RequeueMessageException) {
             return Processor::REQUEUE;
-        } catch (\Throwable $e) {
+        } catch (Throwable) {
             return Processor::REJECT;
         }
     }
