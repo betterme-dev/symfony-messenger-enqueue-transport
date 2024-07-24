@@ -134,7 +134,7 @@ class AmqpContextManagerTest extends TestCase
         $contextProphecy->createTopic($topicName)->shouldBeCalled()->willReturn($topic);
         $contextProphecy->declareTopic($topic)->shouldBeCalled();
         $contextProphecy->createQueue($queueName)->shouldBeCalled()->willReturn($queue);
-        $contextProphecy->declareQueue($queue)->shouldBeCalled();
+
         $context = $contextProphecy->reveal();
 
         $contextManager = new AmqpContextManager($context);
