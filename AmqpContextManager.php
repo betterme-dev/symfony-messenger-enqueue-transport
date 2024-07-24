@@ -80,10 +80,10 @@ class AmqpContextManager implements ContextManager
         $queue = $this->context->createQueue($destination['queue']);
         $queueFlags = $destination['queueOptions']['flags'] ?? ((int)$queue->getFlags() | AmqpQueue::FLAG_DURABLE);
         $queue->setFlags($queueFlags);
-        $this->context->declareQueue($queue);
-
         $queueArguments = $destination['queueOptions']['arguments'] ?? [];
         $queue->setArguments($this->normalizeQueueArguments($queueArguments));
+
+        $this->context->declareQueue($queue);
 
         $this->context->bind(
             new AmqpBind($queue, $topic, $destination['queueOptions']['bindingKey'] ?? null),
