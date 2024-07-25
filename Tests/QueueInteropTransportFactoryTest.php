@@ -25,15 +25,15 @@ class QueueInteropTransportFactoryTest extends TestCase
 {
     use ProphecyTrait;
 
-    public function testSupports()
+    public function testSupports(): void
     {
         $factory = $this->getFactory();
 
-        $this->assertTrue($factory->supports('enqueue://something', array()));
-        $this->assertFalse($factory->supports('amqp://something', array()));
+        $this->assertTrue($factory->supports('enqueue://something', []));
+        $this->assertFalse($factory->supports('amqp://something', []));
     }
 
-    public function testCreatesTransport()
+    public function testCreatesTransport(): void
     {
         $serializer = $this->prophesize(SerializerInterface::class);
         $queueContext = $this->prophesize(Context::class)->reveal();
@@ -45,15 +45,20 @@ class QueueInteropTransportFactoryTest extends TestCase
         $factory = $this->getFactory($serializer->reveal(), $container->reveal());
         $dsn = 'enqueue://default';
 
-        $expectedTransport = new QueueInteropTransport($serializer->reveal(), new AmqpContextManager($queueContext), array(), true);
-        $this->assertEquals($expectedTransport, $factory->createTransport($dsn, array()));
+        $expectedTransport = new QueueInteropTransport(
+            $serializer->reveal(),
+            new AmqpContextManager($queueContext),
+            [],
+            true,
+        );
+        $this->assertEquals($expectedTransport, $factory->createTransport($dsn, []));
 
         // Ensure BC for Symfony beta 4.1
-        $this->assertEquals($expectedTransport, $factory->createSender($dsn, array()));
-        $this->assertEquals($expectedTransport, $factory->createReceiver($dsn, array()));
+        $this->assertEquals($expectedTransport, $factory->createSender($dsn, []));
+        $this->assertEquals($expectedTransport, $factory->createReceiver($dsn, []));
     }
 
-    public function testDnsParsing()
+    public function testDnsParsing(): void
     {
         $queueContext = $this->prophesize(Context::class)->reveal();
         $serializer = $this->prophesize(SerializerInterface::class);
@@ -68,42 +73,47 @@ class QueueInteropTransportFactoryTest extends TestCase
         $expectedTransport = new QueueInteropTransport(
             $serializer->reveal(),
             new AmqpContextManager($queueContext),
-            array(
-                'topic' => array('name' => 'test'),
-                'queue' => array('name' => 'test'),
+            [
+                'topic' => ['name' => 'test'],
+                'queue' => ['name' => 'test'],
                 'deliveryDelay' => 100,
                 'delayStrategy' => RabbitMqDelayPluginDelayStrategy::class,
                 'priority' => 100,
                 'timeToLive' => 100,
                 'receiveTimeout' => 100,
-            ),
-            true
+            ],
+            true,
         );
 
-        $this->assertEquals($expectedTransport, $factory->createTransport($dsn, array()));
+        $this->assertEquals($expectedTransport, $factory->createTransport($dsn, []));
 
         // Ensure BC for Symfony beta 4.1
-        $this->assertEquals($expectedTransport, $factory->createSender($dsn, array()));
-        $this->assertEquals($expectedTransport, $factory->createReceiver($dsn, array()));
+        $this->assertEquals($expectedTransport, $factory->createSender($dsn, []));
+        $this->assertEquals($expectedTransport, $factory->createReceiver($dsn, []));
     }
 
     public function testItThrowsAnExceptionWhenContextDoesNotExist()
     {
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage("Can't find Enqueue's transport named \"foo\": Service \"enqueue.transport.foo.context\" is not found.");
+        $this->expectExceptionMessage(
+            "Can't find Enqueue's transport named \"foo\": Service \"enqueue.transport.foo.context\" is not found.",
+        );
         $container = $this->prophesize(ContainerInterface::class);
         $container->has('enqueue.transport.foo.context')->willReturn(false);
 
         $factory = $this->getFactory(container: $container->reveal());
-        $factory->createTransport('enqueue://foo', array());
+        $factory->createTransport('enqueue://foo', []);
     }
 
-    private function getFactory(SerializerInterface $serializer = null, ContainerInterface $container = null, $debug = true)
-    {
+    private function getFactory(
+        SerializerInterface $serializer = null,
+        ContainerInterface $container = null,
+        $debug = true,
+    ) {
         return new QueueInteropTransportFactory(
             $serializer ?: $this->prophesize(SerializerInterface::class)->reveal(),
             $container ?: $this->prophesize(ContainerInterface::class)->reveal(),
-            $debug
+            $debug,
         );
     }
 }

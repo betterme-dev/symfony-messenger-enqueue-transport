@@ -11,8 +11,9 @@
 
 namespace Enqueue\MessengerAdapter\Exception;
 
+use LogicException;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 
-class RejectMessageException extends \LogicException implements ExceptionInterface
+class RejectMessageException extends LogicException implements ExceptionInterface
 {
 }
