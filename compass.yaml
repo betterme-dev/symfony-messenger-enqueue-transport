@@ -1,6 +1,6 @@
 name: symfony-messenger-enqueue-transport
 slug: symfony-messenger-enqueue-transport
-description: 'Uses Enqueue with Symfony''s Messenger component.'
+description: "Uses Enqueue with Symfony's Messenger component."
 configVersion: 1
 typeId: LIBRARY
 ownerId: 'ari:cloud:identity::team/213646a7-05d6-4792-b784-ded22e4db466'
@@ -11,13 +11,15 @@ fields:
   tier: 3
 
 links:
-  - name: 'betterme-dev/symfony-messenger-enqueue-transport'
+  - name: betterme-dev/symfony-messenger-enqueue-transport
     type: REPOSITORY
     url: 'https://github.com/betterme-dev/symfony-messenger-enqueue-transport'
 
 labels:
+  - 'app-framework:symfony'
   - 'cop:mobile-backend'
-  - 'symfony'
+  - 'language:php'
+  - source:github
 
 customFields:
   - name: Department
