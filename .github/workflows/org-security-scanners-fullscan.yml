@@ -1,0 +1,26 @@
+name: Security Scanning - Fullscan
+
+# Wait previous workflow run
+concurrency:
+  group: "org-security-scanners-fullscan"
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * 0"  # At 7:00 UTC on every Sunday
+    - cron: "0 7 * * 1"  # At 7:00 UTC on every Monday
+    - cron: "0 7 * * 2"  # At 7:00 UTC on every Tuesday
+    - cron: "0 7 * * 3"  # At 7:00 UTC on every Wednesday
+    - cron: "0 7 * * 4"  # At 7:00 UTC on every Thursday
+    - cron: "0 7 * * 5"  # At 7:00 UTC on every Friday
+    - cron: "0 7 * * 6"  # At 7:00 UTC on every Saturday
+
+jobs:
+  security-scanners:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == vars.SECURITY_MBE_CORE_FULLSCAN_CRON_SCHEDULE)
+    uses: betterme-dev/security-scanners/.github/workflows/mobile-backend-core-platform-stream-security-scanning.yaml@main
+    with:
+      actions_version: "main"
+      scan-type: "full"
+    secrets: inherit
